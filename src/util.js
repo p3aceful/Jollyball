@@ -1,7 +1,6 @@
 import { Vertices, Body, Common } from 'matter-js';
 
 export function createPlayerBody(x, y, radius, options) {
-    options.inertia = Infinity;
     let sides = 20;
     let theta = Math.PI / sides;
     let path = '';
