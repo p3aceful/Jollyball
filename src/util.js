@@ -29,3 +29,37 @@ export function createPlayerBody(x, y, radius, options) {
 
     return Body.create(Common.extend({}, polygon, options));
 }
+
+export function getBody(player) {
+    return player.body;
+}
+
+export function setupPlayerKeyboard(keys, keyboard, player) {
+    const { jump, moveRight, moveLeft, dive } = keys;
+
+    keyboard.addMapping(jump, isPressed => {
+        if (isPressed) {
+            player.jump();
+        }
+    });
+
+    keyboard.addMapping(moveRight, isPressed => {
+        if (isPressed) {
+            player.startWalkRight();
+        } else {
+            player.stopWalkRight();
+        }
+    });
+
+    keyboard.addMapping(moveLeft, isPressed => {
+        if (isPressed) {
+            player.startWalkLeft();
+        } else {
+            player.stopWalkLeft();
+        }
+    });
+
+    keyboard.addMapping(dive, isPressed => {
+        player.dive(isPressed);
+    });
+}

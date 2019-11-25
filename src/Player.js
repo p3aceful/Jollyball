@@ -8,10 +8,10 @@ const WalkStates = Object.freeze({
 });
 
 export default class Player {
-    constructor(x, y) {
+    constructor(x, y, keys) {
 
+        this.keys = keys;
         const options = {
-            label: 'player',
             inertia: Infinity,
             // mass: 9,
             // density: 1,
@@ -91,4 +91,5 @@ export default class Player {
         return this.state.walkStateStack[this.state.walkStateStack.length - 1];
     }
 
+    
 }
