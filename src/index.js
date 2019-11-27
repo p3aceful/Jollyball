@@ -1,33 +1,68 @@
-import { Engine, World, Body, Bodies, Render, Events } from 'matter-js';
-import { getBody, setupPlayerKeyboard } from './util'
-import InputContext from './InputContext';
+import { Render, Events } from 'matter-js';
+import Game from './Game';
 import Player from './Player';
+import { keybinds, arena } from './config.json';
+import InputContext from './InputContext';
 
+const { player1Keys, player2Keys } = keybinds;
+const { screenWidth, screenHeight } = arena;
+
+function setupPlayerKeyboard(keyboard, player, keys) {
+    const { jump, right, left, dive } = keys;
+
+    keyboard.addMapping(jump, isPressed => {
+        if (isPressed) {
+            player.jump();
+        }
+    });
+
+    keyboard.addMapping(right, isPressed => {
+        if (isPressed) {
+            player.startWalkRight();
+        } else {
+            player.stopWalkRight();
+        }
+    });
+
+    keyboard.addMapping(left, isPressed => {
+        if (isPressed) {
+            player.startWalkLeft();
+        } else {
+            player.stopWalkLeft();
+        }
+    });
+
+    keyboard.addMapping(dive, isPressed => {
+        player.dive(isPressed);
+    });
+}
+
+const game = new Game();
 const keyboard = new InputContext();
-const engine = Engine.create();
-engine.world.gravity = { x: 0, y: 2, scale: 0.001, };
+let scoreboard = updateScoreboard();
+
 const render = Render.create({
     element: document.body,
-    engine: engine,
+    engine: game.engine,
     options: {
-        width: 900,
-        height: 600,
+        width: screenWidth,
+        height: screenHeight,
         wireframes: false,
         background: '#133377',
     },
 });
 
-const ball = Bodies.circle(render.canvas.width / 2, 50, 30, { restitution: 0.9 });
-const top = Bodies.rectangle(render.canvas.width / 2, -20, render.canvas.width, 40, { isStatic: true });
-const bottom = Bodies.rectangle(render.canvas.width / 2, render.canvas.height + 20, render.canvas.width, 40, { isStatic: true, });
-const left = Bodies.rectangle(-20, render.canvas.height / 2, 40, render.canvas.height, { isStatic: true });
-const right = Bodies.rectangle(render.canvas.width + 20, render.canvas.height / 2, 40, render.canvas.height, { isStatic: true });
+Events.on(render, 'afterRender', event => {
+    render.context.drawImage(
+        scoreboard,
+        (screenWidth / 2) - (scoreboard.width / 2),
+        (screenHeight / 8) - (scoreboard.height / 2)
+    );
+});
 
-const score = {
-    left: 0,
-    right: 0,
-}
-
+Events.on(game, 'update-score', event => {
+    scoreboard = updateScoreboard();
+});
 
 function updateScoreboard() {
     const buffer = document.createElement('canvas');
@@ -37,95 +72,20 @@ function updateScoreboard() {
     context.font = 'bold 40px Arial'
     context.textAlign = 'center';
     context.fillStyle = 'white';
-    context.fillText(`${score.left} - ${score.right}`, buffer.width / 2, buffer.height / 2);
+    context.fillText(`${game.score.left} - ${game.score.right}`, buffer.width / 2, buffer.height / 2);
     return buffer;
 }
 
-const player1Keys = {
-    jump: 'w',
-    moveRight: 'd',
-    moveLeft: 'a',
-    dive: 's'
-};
+const player1 = new Player(50, 50);
+const player2 = new Player(screenWidth - 50, 50);
 
-const player2Keys = {
-    jump: 'ArrowUp',
-    moveRight: 'ArrowRight',
-    moveLeft: 'ArrowLeft',
-    dive: 'ArrowDown'
-};
+setupPlayerKeyboard(keyboard, player1, player1Keys);
+setupPlayerKeyboard(keyboard, player2, player2Keys);
 
-const players = [new Player(50, 50, player1Keys), new Player(render.canvas.width - 50, 50, player2Keys)];
-
-let scoreboard = updateScoreboard();
-
-
-players.forEach(player => {
-    console.log(player);
-
-    setupPlayerKeyboard(player.keys, keyboard, player);
-
-    Events.on(engine, 'beforeUpdate', player.update.bind(player));
-
-    Events.on(player.body, 'grounded', _event => {
-        if (!player.state.isGrounded) {
-            player.state.isGrounded = true;
-        }
-    });
-
-    Events.on(engine, 'collisionStart', event => {
-        event.pairs.forEach(pair => {
-
-            if (pair.bodyA === player.body && pair.bodyB === bottom
-                || pair.bodyA === bottom && pair.bodyB === player.body) {
-
-                Events.trigger(player.body, 'grounded', { pair });
-            }
-
-            if (pair.bodyA === ball && pair.bodyB === left || pair.bodyA === left && pair.bodyB === right) {
-                Events.trigger(ball, 'goal', { pair });
-            }
-            if (pair.bodyA === ball && pair.bodyB === right || pair.bodyA === right && pair.bodyB === ball) {
-                Events.trigger(ball, 'goal', { pair });
-            }
-        })
-    });
-})
-
-Events.on(engine, 'collisionStart', event => {
-    event.pairs.forEach(pair => {
-        if (pair.bodyA === ball && pair.bodyB === left || pair.bodyA === left && pair.bodyB === right) {
-            Events.trigger(ball, 'l-goal', { pair });
-            console.log('left goal');
-        }
-        if (pair.bodyA === ball && pair.bodyB === right || pair.bodyA === right && pair.bodyB === ball) {
-            Events.trigger(ball, 'r-goal', { pair });
-            console.log('right goal');
-        }
-    });
-});
-
-
-Events.on(ball, 'l-goal', event => {
-    score.right++;
-    scoreboard = updateScoreboard();
-    // resetBall();
-    // console.log(score);
-});
-
-Events.on(ball, 'r-goal', event => {
-    score.left++;
-    scoreboard = updateScoreboard();
-    // resetBall();
-    // console.log(score)
-});
-
-Events.on(render, 'afterRender', event => {
-    render.context.drawImage(scoreboard, (render.canvas.width / 2) - (scoreboard.width / 2), (render.canvas.height / 8) - (scoreboard.height / 2));
-
-});
+game.addPlayer(player1, player1Keys);
+game.addPlayer(player2, player2Keys);
+Render.run(render);
+game.run();
 keyboard.listen(window);
 
-World.add(engine.world, [top, bottom, left, right, ball, ...players.map(getBody)]);
-Engine.run(engine);
-Render.run(render);
+// const conn = new WebSocket('ws://localhost:9000');

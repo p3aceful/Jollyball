@@ -1,0 +1,23 @@
+{
+    "arena": {
+        "wallThickness": 50, 
+        "screenWidth": 900,
+        "screenHeight": 600,
+        "halfThickness": 25
+    },
+
+    "keybinds": {
+        "player1Keys": {
+            "left": "a",
+            "right": "d",
+            "jump": "w",
+            "dive": "s"
+        },
+        "player2Keys": {
+            "left": "ArrowLeft",
+            "right": "ArrowRight",
+            "jump": "ArrowUp",
+            "dive": "ArrowDown"
+        }
+    }
+}
