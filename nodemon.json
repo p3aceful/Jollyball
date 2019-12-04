@@ -1,0 +1,4 @@
+{
+    "watch": ["./dist.server/main.js"],
+    "ignore": ["src", "node_modules"]
+}
