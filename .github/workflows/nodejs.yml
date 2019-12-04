@@ -16,4 +16,4 @@ jobs:
         ACCESS_TOKEN: ${{ secrets.BIG_SECRET }}
         BASE_BRANCH: master # The branch the action should deploy from.
         BRANCH: gh-pages # The branch the action should deploy to.
-        FOLDER: dist # The folder the action should deploy.
+        FOLDER: dist.client # The folder the action should deploy.
