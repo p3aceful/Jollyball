@@ -4,7 +4,7 @@
   "description": "Fun game for the whole family",
   "private": true,
   "scripts": {
-    "build": "webpack --config webpack.client.prod.js && webpack --config webpack.server.prod.js",
+    "build": "webpack --config webpack.client.prod.js",
     "start": "webpack-dev-server --open --config webpack.client.dev.js",
     "server": "webpack --watch --config webpack.server.dev.js"
   },
