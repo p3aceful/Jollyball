@@ -1,89 +1,60 @@
-import { Render, Events, Body, World, Engine } from 'matter-js';
-import Game, { callbackOnCollisionStart } from '../shared/Game';
-import Player, { createPlayerBody } from '../shared/Player';
-import { keybinds, arena } from '../shared/config.json';
+import { Render, Events, Body, World, Engine, Runner } from 'matter-js';
+import Game, { callbackOnCollisionStart } from '../common/Game';
+
+import Player, { createPlayerBody } from '../common/Player';
+import { keybinds, arena } from '../common/config.json';
 import InputContext from './InputContext';
 import Resurrect from 'resurrect-js';
 
 const necromancer = new Resurrect();
-const { player1Keys, player2Keys } = keybinds;
+const { player2Keys } = keybinds;
 const { screenWidth, screenHeight } = arena;
 
-const fakeLag = 0;
+const clientSidePrediction = false;
+
+function processInput(name, player, isPressed) {
+    const input = {
+        type: name,
+        isPressed,
+        inputSequenceNumber: ++player.inputSequenceNumber,
+        timestamp: game.engine.timing.timestamp,
+    }
+
+    ws.send(JSON.stringify({
+        type: 'input',
+        data: input,
+    }));
+
+    if (clientSidePrediction) {
+        player.applyInput(input);
+
+        player.pendingInputs.push(input);
+    }
+}
 
 function setupPlayerKeyboard(keyboard, player, keys) {
     const { jump, right, left, dive } = keys;
 
     keyboard.addMapping(jump, isPressed => {
-        const last = new Date().getTime() || player.lastTimestamp
-        const delta = (new Date().getTime() - last) / 1000;
-        const input = { type: 'jump', isPressed, inputSequenceNumber: player.inputSequenceNumber++, delta}
-
-        setTimeout(() => {
-            ws.send(JSON.stringify({
-                type: 'input',
-                data: input,
-            }));
-        }, fakeLag);
-
-
-        player.applyInput(input);
-
-        // save for later reconciliation
-        player.pendingInputs.push(input);
+        processInput('jump', player, isPressed);
     });
 
     keyboard.addMapping(right, isPressed => {
-        const last = new Date().getTime() || player.lastTimestamp
-        const delta = (new Date().getTime() - last) / 1000;
-        const input = { type: 'move-right', isPressed, inputSequenceNumber: player.inputSequenceNumber++, delta}
-        setTimeout(() => {
-            ws.send(JSON.stringify({
-                type: 'input',
-                data: input,
-            }));
-        }, fakeLag);
-
-        player.applyInput(input);
-
-        player.pendingInputs.push(input);
+        processInput('move-right', player, isPressed)
     });
 
     keyboard.addMapping(left, isPressed => {
-        const last = new Date().getTime() || player.lastTimestamp
-        const delta = (new Date().getTime() - last) / 1000;
-
-        const input = { type: 'move-left', isPressed, inputSequenceNumber: player.inputSequenceNumber++, delta}
-        setTimeout(() => {
-            ws.send(JSON.stringify({
-                type: 'input',
-                data: input,
-            }));
-        }, fakeLag);
-        player.applyInput(input);
-        player.pendingInputs.push(input);
+        processInput('move-left', player, isPressed)
     });
 
     keyboard.addMapping(dive, isPressed => {
-        const last = new Date().getTime() || player.lastTimestamp
-        const delta = (new Date().getTime() - last) / 1000;
-        const input = { type: 'dive', isPressed, inputSequenceNumber: player.inputSequenceNumber++, delta}
-        setTimeout(() => {
-            ws.send(JSON.stringify({
-                type: 'input',
-                data: input,
-            }));
-        }, fakeLag);
-        player.applyInput(input);
-        player.pendingInputs.push(input);
+        processInput('dive', player, isPressed);
     });
-
 }
 
-const engine = Engine.create();
+const engine = Engine.create({ isFixed: true });
 const game = new Game(engine);
 const keyboard = new InputContext();
-// let scoreboard = updateScoreboard();
 
 const render = Render.create({
     element: document.body,
@@ -95,85 +66,81 @@ const render = Render.create({
         background: '#133377',
     },
 });
-
-// Events.on(render, 'afterRender', event => {
-//     render.context.drawImage(
-//         scoreboard,
-//         (screenWidth / 2) - (scoreboard.width / 2),
-//         (screenHeight / 8) - (scoreboard.height / 2)
-//     );
-// });
-
-// Events.on(game, 'update-score', event => {
-//     scoreboard = updateScoreboard();
-// });
-
-// function updateScoreboard() {
-//     const buffer = document.createElement('canvas');
-//     buffer.width = 300;
-//     buffer.height = 100;
-//     const context = buffer.getContext('2d');
-//     context.font = 'bold 40px Arial'
-//     context.textAlign = 'center';
-//     context.fillStyle = 'white';
-//     context.fillText(`${game.score.left} - ${game.score.right}`, buffer.width / 2, buffer.height / 2);
-//     return buffer;
-// }
-
 Render.run(render);
+
+let scoreboard = updateScoreboard();
+
+Events.on(render, 'afterRender', event => {
+    render.context.drawImage(
+        scoreboard,
+        (screenWidth / 2) - (scoreboard.width / 2),
+        (screenHeight / 8) - (scoreboard.height / 2)
+    );
+});
+
+Events.on(game, 'update-score', event => {
+    game.score = event.score
+    scoreboard = updateScoreboard();
+});
+
+function updateScoreboard() {
+    const buffer = document.createElement('canvas');
+    buffer.width = 300;
+    buffer.height = 100;
+    const context = buffer.getContext('2d');
+    context.font = 'bold 40px Arial'
+    context.textAlign = 'center';
+    context.fillStyle = 'white';
+    context.fillText(`${game.score.left} - ${game.score.right}`, buffer.width / 2, buffer.height / 2);
+    return buffer;
+}
+
+const runner = Runner.create({ isFixed: true });
+Runner.run(runner, engine);
+
 keyboard.listen(window);
 
-// const ws = new WebSocket('ws://localhost:9000');
-const ws = new WebSocket('wss://morning-reef-06070.herokuapp.com');
+
+let addr;
+
+if(process.env.NODE_ENV === 'development') {
+    addr = 'ws://localhost:9000';
+} else {
+    addr = 'wss://morning-reef-06070.herokuapp.com';
+}
+
+const ws = new WebSocket(addr);
+// const ws = new WebSocket('wss://morning-reef-06070.herokuapp.com');
 
 ws.addEventListener('open', () => {
     console.log('Connection established');
 });
 
+function simulateTime(body, timestepDelta, time) {
+    let accumulator = 0;
+    while (time >= accumulator) {
+        Body.update(body, timestepDelta, 1, 1);
+        accumulator += timestepDelta;
+    }
+}
+
 const entities = new Map();
-let me;
+
+
 ws.addEventListener('message', event => {
     const message = JSON.parse(event.data);
 
     if (message.type === 'world-state') {
 
-
-        message.state.map(body => necromancer.resurrect(body)).forEach(body => {
-            if (!entities.has(body.id)) {
-                console.log('dont have that');
-                throw new Error('I have a received a body which is not in my list of entities');
-            }
-
-            Body.set(entities.get(body.id), body);
-
-            // if (body.id === me.body.id) {
-
-            //     // Server corrected my position. Re-apply all inputs that are not processed by server.
-            //     let i = 0;
-            //     while(i < me.pendingInputs.length) {
-
-            //         const input = me.pendingInputs[i];
-
-            //         if (input.inputSequenceNumber <= message.lastProcessedInput) {
-            //             // Already processed
-            //             me.pendingInputs.splice(i, 1);
-            //         } else {
-            //             // Not processed yet. apply it.
-            //             me.applyInput(input);
-            //             // Body.update(me.body, input.delta, 1, 0);
-            //             i++;
-            //         }
-            //     }
-            // }
-        });
+        Events.trigger(ws, 'received-world-state', { message });
 
 
     } else if (message.type === 'player-created') {
-        console.log('Initiating game...')
-        console.log(message);
+        console.log('Initiating game...');
+        // console.log(message);
 
         const player = new Player(necromancer.resurrect(message.entity));
-        me = player;
+
         setupPlayerKeyboard(keyboard, player, player2Keys);
 
         entities.set(player.body.id, player.body);
@@ -187,21 +154,54 @@ ws.addEventListener('message', event => {
         const bottomWall = entities.get('bottom-wall');
 
         callbackOnCollisionStart(game.engine, player.body, bottomWall, () => {
-            Events.trigger(player.body, 'grounded');
-        });
-
-        Events.on(game.engine, 'beforeUpdate', player.update.bind(player));
-        Events.on(player.body, 'grounded', _event => {
-
             if (!player.state.isGrounded) {
                 player.state.isGrounded = true;
             }
         });
 
+        Events.on(game.engine, 'beforeUpdate', player.update.bind(player));
+
         World.addBody(game.engine.world, player.body);
-        console.log(entities);
-        game.run();
-        ws.send(JSON.stringify({ type: 'player-created' }));
+
+        Events.on(ws, 'received-world-state', ({ message }) => {
+            message.state
+                .map(body => necromancer.resurrect(body))
+                .forEach(body => {
+                    if (!entities.has(body.id)) {
+                        throw new Error('I have a received a body which is not in my list of entities');
+                    }
+
+                    Body.set(entities.get(body.id), body);
+
+                    if (body.id === player.body.id && clientSidePrediction) {
+                        let i = 0;
+                        while (i < player.pendingInputs.length) {
+
+                            const input = player.pendingInputs[i];
+
+                            if (input.inputSequenceNumber <= message.lastProcessedInput) {
+                                // Already processed
+                                player.pendingInputs.splice(i, 1);
+                            } else {
+                                // Not processed yet. apply it.
+                                player.applyInput(input);
+
+                                const timestep = 1000 / 60;
+                                const nextInput = player.pendingInputs[i + 1];
+                                let unsimulatedTime = typeof nextInput === 'undefined'
+                                    ? game.engine.timing.timestamp - input.timestamp
+                                    : nextInput.timestamp - input.timestamp;
+
+                                simulateTime(player.body, timestep, unsimulatedTime);
+                                i++;
+                            }
+                        }
+                    }
+                });
+
+            Events.trigger(game, 'update-score', { score: message.score });
+        });
+
         console.log('Game initiated.')
 
     } else if (message.type === 'other-connected') {

@@ -1,7 +1,5 @@
-import { Engine, World, Bodies, Body, Events } from 'matter-js';
-import InputContext from '../client/InputContext';
+import { Engine, World, Bodies, Events } from 'matter-js';
 import config from './config.json';
-import Resurrect from 'resurrect-js';
 
 const { screenHeight, screenWidth, wallThickness, halfThickness } = config.arena;
 
@@ -33,6 +31,9 @@ export default class Game {
         }
     }
 
+    /**
+     * run on server before starting game.
+     */
     setupBodies() {
 
         const bottomWall = createWall(screenWidth / 2, screenHeight + halfThickness, screenWidth, wallThickness, 'bottom-wall');

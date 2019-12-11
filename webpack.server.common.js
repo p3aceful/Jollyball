@@ -1,11 +1,10 @@
 const path = require('path');
 
-module.exports = serverConfig = {
-    entry: './src/server/server.js',
+module.exports = {
+    entry: './src/server/main.js',
     target: 'node',
     output: {
-        filename: 'main.js',
+        filename: '[name].bundle.js',
         path: path.resolve(__dirname, 'dist.server'),
     },
-    mode: 'development',
 }

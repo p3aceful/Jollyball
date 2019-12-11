@@ -1,14 +1,12 @@
 {
   "name": "jolleyball",
   "version": "1.0.0",
-  "description": "",
+  "description": "Fun game for the whole family",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack",
-    "buildserver": "webpack --config webpack.server.config.js",
-    "start": "webpack-dev-server --open",
-    "server": "webpack --watch --mode development --config webpack.server.config.js"
+    "build": "webpack --config webpack.client.prod.js && webpack --config webpack.server.prod.js",
+    "start": "webpack-dev-server --open --config webpack.client.dev.js",
+    "server": "webpack --watch --config webpack.server.dev.js"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +17,8 @@
     "nodemon": "^2.0.1",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10",
-    "webpack-dev-server": "^3.9.0"
+    "webpack-dev-server": "^3.9.0",
+    "webpack-merge": "^4.2.2"
   },
   "dependencies": {
     "matter-js": "^0.14.2",

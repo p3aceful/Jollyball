@@ -43,7 +43,11 @@ export default class Player {
     }
 
     update(tickMetaData) {
+        
+        if (typeof window !== 'undefined') {
+            // console.log(tickMetaData)
 
+        }
         // Update player
         let currentWalkState = this.getCurrentWalkState();
 
