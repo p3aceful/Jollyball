@@ -10,7 +10,7 @@ const necromancer = new Resurrect();
 const { player2Keys } = keybinds;
 const { screenWidth, screenHeight } = arena;
 
-const clientSidePrediction = false;
+const clientSidePrediction = true;
 
 function processInput(name, player, isPressed) {
     const input = {
@@ -52,7 +52,7 @@ function setupPlayerKeyboard(keyboard, player, keys) {
     });
 }
 
-const engine = Engine.create({ isFixed: true });
+const engine = Engine.create({ isFixed: false });
 const game = new Game(engine);
 const keyboard = new InputContext();
 
@@ -103,26 +103,22 @@ keyboard.listen(window);
 
 let addr;
 
-if(process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development') {
     addr = 'ws://localhost:9000';
 } else {
     addr = 'wss://morning-reef-06070.herokuapp.com';
 }
 
 const ws = new WebSocket(addr);
-// const ws = new WebSocket('wss://morning-reef-06070.herokuapp.com');
 
 ws.addEventListener('open', () => {
     console.log('Connection established');
 });
 
-function simulateTime(body, timestepDelta, time) {
-    let accumulator = 0;
-    while (time >= accumulator) {
-        Body.update(body, timestepDelta, 1, 1);
-        accumulator += timestepDelta;
-    }
-}
+
+Events.on(render, 'beforeRender', () => {
+    //do prediction
+})
 
 const entities = new Map();
 
@@ -174,6 +170,7 @@ ws.addEventListener('message', event => {
                     Body.set(entities.get(body.id), body);
 
                     if (body.id === player.body.id && clientSidePrediction) {
+
                         let i = 0;
                         while (i < player.pendingInputs.length) {
 
@@ -185,17 +182,29 @@ ws.addEventListener('message', event => {
                             } else {
                                 // Not processed yet. apply it.
                                 player.applyInput(input);
+                                player.update();
 
-                                const timestep = 1000 / 60;
                                 const nextInput = player.pendingInputs[i + 1];
+
                                 let unsimulatedTime = typeof nextInput === 'undefined'
                                     ? game.engine.timing.timestamp - input.timestamp
                                     : nextInput.timestamp - input.timestamp;
 
-                                simulateTime(player.body, timestep, unsimulatedTime);
+                                let acc = 0;
+                                while(unsimulatedTime >= acc+ (1000 / 60) ) {
+                                    Body.update(player.body, (1000 / 60), 1, 1);
+                                    acc += (1000 / 60);
+                                }
+                                let rest = unsimulatedTime - acc;
+                                console.log(rest);
+                                Body.update(player.body, rest, 1, 1);
+                                // simulateTime(player.body, game.engine.timing.delta, unsimulatedTime);
+                                // Engine.update(game.engine, unsimulatedTime, 1);
+                                // simulateTime(player.body, timestep, unsimulatedTime);
                                 i++;
                             }
                         }
+
                     }
                 });
 
@@ -215,3 +224,4 @@ ws.addEventListener('message', event => {
         World.remove(game.engine.world, localBody);
     }
 });
+

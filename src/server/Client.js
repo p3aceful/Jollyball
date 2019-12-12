@@ -7,10 +7,13 @@ export default class Client {
     send(data) {
         const msg = JSON.stringify(data);
 
-        this.conn.send(msg, (err) => {
-            if (err) {
-                console.log('Error sending message');
-            }
-        })
+        setTimeout(() => {
+            this.conn.send(msg, (err) => {
+                if (err) {
+                    console.log('Error sending message');
+                }
+            })
+
+        }, 500);
     }
 }

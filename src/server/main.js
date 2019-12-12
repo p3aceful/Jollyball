@@ -103,7 +103,6 @@ wss.on('connection', conn => {
     client.send(msg)
 
     conn.on('message', message => {
-
         const data = JSON.parse(message);
 
         if (data.type === 'input') {
