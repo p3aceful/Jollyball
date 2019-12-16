@@ -1,19 +1,15 @@
 export default class Client {
-    constructor(conn, player) {
+    constructor(conn) {
         this.conn = conn;
-        this.player = player;
     }
 
-    send(data) {
-        const msg = JSON.stringify(data);
+    send(message) {
+        const packet = JSON.stringify(message);
 
-        setTimeout(() => {
-            this.conn.send(msg, (err) => {
-                if (err) {
-                    console.log('Error sending message');
-                }
-            })
-
-        }, 500);
+        this.conn.send(packet, (err) => {
+            if (err) {
+                console.log('Error sending message');
+            }
+        });
     }
 }

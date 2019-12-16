@@ -1,11 +1,5 @@
 import { Body, Bodies, Vertices, Common } from 'matter-js';
 
-const WalkStates = Object.freeze({
-    WALK_RIGHT: Symbol('walk_right'),
-    WALK_LEFT: Symbol('walk_left'),
-    STANDING: Symbol('standing'),
-});
-
 export default class Player {
 
     static stats() {
@@ -18,96 +12,57 @@ export default class Player {
     constructor(body) {
         this.body = body;
 
-        this.state = {
-            isGrounded: false,
-            canDoubleJump: false,
-            walkStateStack: [WalkStates.STANDING],
+        this.keyState = {
+            up: false,
+            down: false,
+            right: false,
+            left: false,
         }
 
-        this.inputSequenceNumber = 0;
         this.pendingInputs = [];
+        this.outgoingInput = [];
     }
-
-    queueInput(input) {
-        this.pendingInputs.push(input);
-    }
-
 
     applyInput(input) {
-        switch (input.type) {
-            case 'dive': this.dive(input.isPressed); break;
-            case 'jump': this.jump(input.isPressed); break;
-            case 'move-left': input.isPressed ? this.startWalkLeft() : this.stopWalkLeft(); break;
-            case 'move-right': input.isPressed ? this.startWalkRight() : this.stopWalkRight(); break;
+
+        if (input.up) {
+            Body.setVelocity(this.body, { x: this.body.velocity.x, y: -10 });
+        }
+        if (input.down) {
+            Body.setVelocity(this.body, { x: this.body.velocity.x, y: 10 });
+        }
+        if (input.left) {
+            // Body.applyForce(this.body, this.body.position, { x: -0.14, y: 0 });
+            Body.setVelocity(this.body, { x: -10, y: this.body.velocity.y });
+        }
+        if (input.right) {
+            // Body.applyForce(this.body, this.body.position, { x: 0.14, y: 0 });
+            Body.setVelocity(this.body, { x: 10, y: this.body.velocity.y });
         }
     }
 
-    update(tickMetaData) {
-        
-        if (typeof window !== 'undefined') {
-            // console.log(tickMetaData)
-            // console.log('Player update')
-        }
-        // Update player
-        let currentWalkState = this.getCurrentWalkState();
+    
+    // dive(isPressed) {
+    //     if (isPressed) {
+    //         Body.setVelocity(this.body, { x: 0, y: 10 });
+    //     }
+    // }
 
-        if (currentWalkState === WalkStates.STANDING) {
-            return;
-        }
+    // jump(isPressed) {
+    //     if (!isPressed) {
+    //         return;
+    //     }
 
-        const stats = Player.stats();
-
-        if (currentWalkState === WalkStates.WALK_LEFT) {
-            Body.setVelocity(this.body, { x: -stats.speed, y: this.body.velocity.y });
-        } else {
-            // Body.setVelocity(this.body, { x: this.stats.speed, y: this.body.velocity.y });
-            Body.setVelocity(this.body, { x: stats.speed, y: this.body.velocity.y })
-        }
-    }
-
-    startWalkRight() {
-        this.state.walkStateStack.push(WalkStates.WALK_RIGHT);
-    }
-
-    stopWalkRight() {
-        this.state.walkStateStack = this.state.walkStateStack.filter(state => state !== WalkStates.WALK_RIGHT);
-        Body.setVelocity(this.body, { x: 0, y: this.body.velocity.y })
-    }
-
-    startWalkLeft() {
-        this.state.walkStateStack.push(WalkStates.WALK_LEFT);
-    }
-
-    stopWalkLeft() {
-        this.state.walkStateStack = this.state.walkStateStack.filter(state => state !== WalkStates.WALK_LEFT);
-        Body.setVelocity(this.body, { x: 0, y: this.body.velocity.y })
-    }
-
-    dive(isPressed) {
-        if (isPressed) {
-            Body.setVelocity(this.body, { x: 0, y: 10 });
-        }
-    }
-
-    jump(isPressed) {
-        if (!isPressed) {
-            return;
-        }
-
-        const stats = Player.stats();
-        if (this.state.isGrounded) {
-            this.state.isGrounded = false;
-            Body.setVelocity(this.body, { x: this.body.velocity.x, y: stats.jumpPower });
-            this.state.canDoubleJump = true;
-        } else if (this.state.canDoubleJump) {
-            this.state.canDoubleJump = false;
-            Body.setVelocity(this.body, { x: this.body.velocity.x, y: stats.jumpPower });
-        }
-    }
-
-    getCurrentWalkState() {
-        return this.state.walkStateStack[this.state.walkStateStack.length - 1];
-    }
+    //     const stats = Player.stats();
+    //     if (this.state.isGrounded) {
+    //         this.state.isGrounded = false;
+    //         Body.setVelocity(this.body, { x: this.body.velocity.x, y: stats.jumpPower });
+    //         this.state.canDoubleJump = true;
+    //     } else if (this.state.canDoubleJump) {
+    //         this.state.canDoubleJump = false;
+    //         Body.setVelocity(this.body, { x: this.body.velocity.x, y: stats.jumpPower });
+    //     }
+    // }
 }
 
 

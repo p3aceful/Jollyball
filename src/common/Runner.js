@@ -20,8 +20,7 @@ var requestAnimationFrame = typeof requestAnimationFrame === 'function' ? reques
 var cancelAnimationFrame = typeof cancelAnimationFrame === 'function' ? cancelAnimationFrame : clearTimeout;
 
 export default class Runner {
-    constructor(timestep = 1000 / 60) {
-        this.timestep = timestep;
+    constructor() {
 
         this._lastFrameTimeMs = 0;
         this._maxFPS = 60;
@@ -34,9 +33,9 @@ export default class Runner {
         this._lastFrameTimeMs = timestamp;
 
         let numUpdateSteps = 0;
-        while (this._delta >= this.timestep) {
-            Events.trigger(this, 'beforeUpdate', { timestamp, timestep: this.timestep });
-            this._delta -= this.timestep;
+        while (this._delta >= timestep) {
+            Events.trigger(this, 'tick', { timestamp, timestep: this.timestep });
+            this._delta -= timestep;
 
             if (++numUpdateSteps >= 240) {
                 this.panic();
@@ -44,7 +43,7 @@ export default class Runner {
             }
         }
 
-        Events.trigger(this, 'beforeRender');
+        Events.trigger(this, 'render');
         requestAnimationFrame(this.tick.bind(this));
     }
 

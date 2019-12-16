@@ -1,9 +1,9 @@
 {
     "arena": {
-        "wallThickness": 50, 
+        "wallThickness": 100, 
         "screenWidth": 900,
         "screenHeight": 600,
-        "halfThickness": 25
+        "halfThickness": 50
     },
 
     "keybinds": {
