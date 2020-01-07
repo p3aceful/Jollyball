@@ -1,4 +1,4 @@
-import { Body, Bodies, Vertices, Common } from 'matter-js';
+import { Body, Vertices, Common } from 'matter-js';
 
 export default class Player {
 
@@ -32,16 +32,17 @@ export default class Player {
             Body.setVelocity(this.body, { x: this.body.velocity.x, y: 10 });
         }
         if (input.left) {
-            // Body.applyForce(this.body, this.body.position, { x: -0.14, y: 0 });
+            // Body.applyForce(this.body, this.body.position, { x: -0.05, y: 0 });
             Body.setVelocity(this.body, { x: -10, y: this.body.velocity.y });
         }
         if (input.right) {
-            // Body.applyForce(this.body, this.body.position, { x: 0.14, y: 0 });
+            // Body.applyForce(this.body, this.body.position, { x: 0.05, y: 0 });
             Body.setVelocity(this.body, { x: 10, y: this.body.velocity.y });
         }
     }
 
     
+
     // dive(isPressed) {
     //     if (isPressed) {
     //         Body.setVelocity(this.body, { x: 0, y: 10 });

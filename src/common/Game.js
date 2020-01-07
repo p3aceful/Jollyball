@@ -31,8 +31,21 @@ export default class Game {
         }
     }
 
+    initWorld() {
+        const bottomWall = createWall(screenWidth / 2, screenHeight + halfThickness, screenWidth, wallThickness, 'bottom-wall');
+        const topWall = createWall(screenWidth / 2, -halfThickness, screenWidth, wallThickness, 'top-wall');
+        const leftWall = createWall(-halfThickness, screenHeight / 2, wallThickness, screenHeight, 'left-wall');
+        const rightWall = createWall(screenWidth + halfThickness, screenHeight / 2, wallThickness, screenHeight, 'right-wall');
+
+
+        const bodies = [topWall, bottomWall, leftWall, rightWall,];
+        
+        this.bodies = new Map(bodies.map(body => ([body.id, body])));
+        World.add(this.engine.world, bodies);
+    }
+    
     /**
-     * run on server before starting game.
+     * run on server bef ore starting game.
      */
     setupBodies() {
 
@@ -41,9 +54,9 @@ export default class Game {
         const leftWall = createWall(-halfThickness, screenHeight / 2, wallThickness, screenHeight, 'left-wall');
         const rightWall = createWall(screenWidth + halfThickness, screenHeight / 2, wallThickness, screenHeight, 'right-wall');
 
-        const ball = Bodies.circle(screenWidth / 2, 50, 30, { restitution: 0.9, id: 'ball' });
+        // const ball = Bodies.circle(screenWidth / 2, 50, 30, { restitution: 0.9, id: 'ball' });
 
-        const bodies = [topWall, bottomWall, leftWall, rightWall, ball]
+        const bodies = [topWall, bottomWall, leftWall, rightWall, /* ball */]
         this.bodies = new Map(bodies.map(body => ([body.id, body])));
         World.add(this.engine.world, bodies);
     }
